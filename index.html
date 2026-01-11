@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Bloom Wellness Journal</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  :root {
+    --bg: #f5f9f7; --card: #ffffff; --text: #1f2937; --muted: #6b7280; --border: #e5e7eb;
+    --primary: #22c55e; --primary-700: #16a34a;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+  header { background: var(--card); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; position: sticky; top: 0; z-index: 50; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: 0.2px; }
+  .brand-mark { width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, #5df28e, #22c55e); }
+  nav { display: flex; gap: 18px; align-items: center; }
+  nav a { text-decoration: none; color: var(--text); font-weight: 600; padding: 8px 10px; border-radius: 6px; }
+  nav a.active { background: #f0fdf4; color: var(--primary-700); }
+  .btn { background: var(--primary); color: white; border: none; border-radius: 8px; padding: 10px 16px; font-weight: 700; cursor: pointer; box-shadow: 0 2px 0 #16a34a; }
+  .btn:hover { background: var(--primary-700); }
+  .container { max-width: 1000px; margin: 0 auto; padding: 24px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); padding: 20px; margin-bottom: 22px; }
+  h2 { margin: 0 0 8px; font-size: 22px; }
+  p.muted { color: var(--muted); margin-top: 6px; }
+  textarea { width: 100%; min-height: 140px; padding: 12px; border-radius: 10px; border: 1px solid var(--border); resize: vertical; font-size: 15px; }
+  .stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
+  .stat { background: #f0fdf4; border: 1px solid #dcfce7; border-radius: 10px; padding: 16px; text-align: center; }
+  .stat strong { font-size: 20px; display: block; }
+  .badge-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
+  .badge { border: 1px dashed #d1fae5; background: #f7fee7; border-radius: 12px; padding: 14px; text-align: center; font-weight: 600; }
+  .badge.unlocked { border: 1px solid #fde68a; background: #fff7ed; }
+  .list { display: grid; gap: 10px; }
+  .list-item { border: 1px solid var(--border); border-radius: 10px; padding: 12px; background: #fafafa; }
+  .chip { display: inline-block; padding: 6px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+  .chip.pos { background: #dcfce7; color: #065f46; }
+  .chip.neu { background: #e5e7eb; color: #374151; }
+  .chip.neg { background: #fee2e2; color: #7f1d1d; }
+  .footer { text-align: center; color: var(--muted); padding: 18px; font-size: 14px; }
+  .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-top: 16px; }
+  .day { border: 1px solid var(--border); background: #fff; border-radius: 8px; height: 60px; display: flex; align-items: center; justify-content: center; position: relative; font-size: 13px; color: #475569; }
+  .dot { position: absolute; bottom: 6px; width: 6px; height: 6px; background: var(--primary); border-radius: 50%; }
+  .hero { text-align: center; padding: 40px 24px; background: linear-gradient(180deg, #f0fdf4, #ffffff); border: 1px solid #dcfce7; border-radius: 12px; }
+  .grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 18px; }
+  @media (max-width: 880px) {
+    .stats { grid-template-columns: repeat(2,1fr); }
+    .badge-grid { grid-template-columns: repeat(2,1fr); }
+    .grid-2 { grid-template-columns: 1fr; }
+  }
+
+  /* Chat widget */
+  .chat-toggle { position: fixed; right: 24px; bottom: 24px; z-index: 100; }
+  .chat-panel {
+    position: fixed; right: 24px; bottom: 90px; width: 340px; max-height: 70vh;
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    display: none; flex-direction: column; overflow: hidden; z-index: 100;
+  }
+  .chat-header { padding: 12px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .chat-body { padding: 12px; overflow-y: auto; display: grid; gap: 10px; }
+  .msg { border-radius: 10px; padding: 10px 12px; max-width: 85%; font-size: 14px; line-height: 1.35; }
+  .msg.user { background: #dcfce7; justify-self: end; }
+  .msg.ai { background: #f3f4f6; justify-self: start; }
+  .chat-input { border-top: 1px solid var(--border); display: flex; gap: 8px; padding: 10px; }
+  .chat-input input { flex: 1; border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-size: 14px; }
+</style>
+</head>
+<body>
+  <header>
+    <div class="brand"><div class="brand-mark"></div><div>Bloom</div></div>
+    <nav>
+      <a href="#home" id="tab-home" class="active">Home</a>
+      <a href="#journal" id="tab-journal">Journal</a>
+      <a href="#dashboard" id="tab-dashboard">Dashboard</a>
+      <a href="#support" id="tab-support">Support</a>
+    </nav>
+    <button class="btn" id="startJournalingBtn">Start Journaling</button>
+  </header>
+
+  <main class="container">
+    <!-- Home -->
+    <section id="home" class="view">
+      <div class="hero">
+        <h2>Ready to start your wellness journey?</h2>
+        <p class="muted">Join thousands of students who are taking control of their mental health. It only takes a few minutes a day.</p>
+        <button class="btn" id="startNow">Start Journaling Now</button>
+        <p class="muted" style="margin-top:10px;">Free to start • No credit card required • 100% private</p>
+      </div>
+
+      <div class="card">
+        <h2>Wellness Tips</h2>
+        <p class="muted">Personalized just for you</p>
+        <div class="grid-2">
+          <div class="list-item"><strong>4-7-8 Breathing:</strong> Breathe in 4s, hold 7s, exhale 8s. Repeat 3 times.</div>
+          <div class="list-item"><strong>Take a Short Break:</strong> Step away for a 5-minute walk outside.</div>
+          <div class="list-item"><strong>Listen to Music:</strong> Play a calming playlist for 10 minutes.</div>
+          <div class="list-item"><strong>Gratitude Micro-practice:</strong> Note three things you appreciate today.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Journal -->
+    <section id="journal" class="view" style="display:none;">
+      <div class="card">
+        <h2>Your Wellness Journal</h2>
+        <p class="muted" id="journalDate"></p>
+        <div style="font-weight:700; color:#374151; margin-bottom:8px;">What are you grateful for today?</div>
+        <textarea id="journalEntry" placeholder="Start writing here... Express your thoughts, feelings, and experiences freely. This is your safe space."></textarea>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:12px;">
+          <div class="muted" id="charCount">0 characters</div>
+          <button class="btn" id="submitEntry">Submit Entry</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>AI Analysis</h2>
+        <p class="muted">Write an entry to see insights</p>
+        <div id="aiAnalysis" class="list"></div>
+      </div>
+
+      <div class="card">
+        <h2>Journal Calendar</h2>
+        <p class="muted" id="calendarMonth"></p>
+        <div class="calendar" id="calendarGrid"></div>
+      </div>
+
+      <div class="card">
+        <h2>Recent Entries</h2>
+        <div id="recentEntries" class="list"></div>
+      </div>
+
+      <div class="card">
+        <h2>Wellness Insight</h2>
+        <p id="insightText" class="muted">Your mood has been improving over the past week! Your most positive entries mention gratitude and morning routines.</p>
+      </div>
+    </section>
+
+    <!-- Dashboard -->
+    <section id="dashboard" class="view" style="display:none;">
+      <div class="card">
+        <h2>Your Wellness Dashboard</h2>
+        <p class="muted">Track your emotional journey and see how you've been doing.</p>
+        <div class="stats">
+          <div class="stat"><strong id="statTotal">0</strong> Total Entries</div>
+          <div class="stat"><strong id="statAvgMood">—</strong> Avg Mood</div>
+          <div class="stat"><strong id="statTopEmotion">—</strong> Top Emotion</div>
+          <div class="stat"><strong id="statStreak">0</strong> Current Streak</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Mood Trends</h2>
+        <p class="muted">Your emotional journey over time</p>
+        <canvas id="moodChart" height="100"></canvas>
+      </div>
+
+      <div class="card">
+        <h2>Badges</h2>
+        <div class="badge-grid">
+          <div class="badge" id="badgeFirst">First Step</div>
+          <div class="badge" id="badge3Day">3-Day Warrior</div>
+          <div class="badge" id="badgeWeek">Week Champion</div>
+          <div class="badge" id="badgeMonth">Monthly Master</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Support -->
+    <section id="support" class="view" style="display:none;">
+      <div class="card">
+        <h2>Find supportive care</h2>
+        <p class="muted">This tool helps you identify legitimate options to connect with licensed professionals. It doesn’t provide medical advice.</p>
+      </div>
+
+      <div class="card">
+        <h2>Doctor and therapist finder</h2>
+        <p class="muted">Enter your city and specialty to search.</p>
+        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+          <input id="city" placeholder="City (e.g., Alwal, Hyderabad)" style="flex:1; border:1px solid var(--border); border-radius:8px; padding:10px;" />
+          <select id="specialty" style="flex:1; border:1px solid var(--border); border-radius:8px; padding:10px;">
+            <option value="">Select specialty</option>
+            <option>Psychiatrist</option>
+            <option>Clinical Psychologist</option>
+            <option>Counselor</option>
+            <option>General Physician</option>
+          </select>
+          <button class="btn" id="findBtn">Search</button>
+        </div>
+        <div id="results" class="list" style="margin-top:12px;"></div>
+        <div class="list-item" style="margin-top:12px;">
+          <strong>Note:</strong> Verify licensing and clinic affiliations. Compare feedback across multiple sources.
+        </div>
+      </div>
+    </section>
+
+    <div class="footer">© 2026 Bloom Wellness. All rights reserved. Made with ♥ for students.</div>
+  </main>
+
+  <!-- Chat widget -->
+  <button class="btn chat-toggle" id="chatToggle">Chat</button>
+  <div class="chat-panel" id="chatPanel">
+    <div class="chat-header">
+      <div style="font-weight:700;">Bloom AI</div>
+      <button class="btn" id="closeChat" style="padding:6px 10px;">Close</button>
+    </div>
+    <div class="chat-body" id="chatBody">
+      <div class="msg ai">Hi! I’m here to help with journaling and supportive next steps.</div>
+    </div>
+    <div class="chat-input">
+      <input id="chatInput" placeholder="Ask about wellness, journaling, or support..." />
+      <button class="btn" id="sendMsg">Send</button>
+    </div>
+  </div>
+
+<script>
+  const BACKEND_URL = "http://localhost:8000";
+
+  // Storage & model
+  const STORAGE_KEY = "bloom_entries_v1";
+  let entries = loadEntries();
+
+  const MOOD_SCORE = { Gratitude: 5, Joy: 5, Calm: 4, Neutral: 3, Anxiety: 2, Stress: 1, Sadness: 1 };
+
+  // Routing
+  const views = {
+    home: document.getElementById("home"),
+    journal: document.getElementById("journal"),
+    dashboard: document.getElementById("dashboard"),
+    support: document.getElementById("support"),
+  };
+  const tabs = {
+    home: document.getElementById("tab-home"),
+    journal: document.getElementById("tab-journal"),
+    dashboard: document.getElementById("tab-dashboard"),
+    support: document.getElementById("tab-support"),
+  };
+  function setRoute(route) {
+    Object.keys(views).forEach(k => views[k].style.display = k === route ? "" : "none");
+    Object.keys(tabs).forEach(k => tabs[k].classList.toggle("active", k === route));
+    if (route === "journal") renderJournal();
+    if (route === "dashboard") renderDashboard();
+    location.hash = route;
+  }
+  window.addEventListener("hashchange", () => setRoute((location.hash || "#home").replace("#","") || "home"));
+
+  // Journal elements
+  const journalDateEl = document.getElementById("journalDate");
+  const entryEl = document.getElementById("journalEntry");
+  const charCountEl = document.getElementById("charCount");
+  const submitBtn = document.getElementById("submitEntry");
+  const aiAnalysisEl = document.getElementById("aiAnalysis");
+  const recentEntriesEl = document.getElementById("recentEntries");
+  const calendarMonthEl = document.getElementById("calendarMonth");
+  const calendarGridEl = document.getElementById("calendarGrid");
+
+  entryEl.addEventListener("input", () => { charCountEl.textContent = `${entryEl.value.length} characters`; });
+  submitBtn.addEventListener("click", () => {
+    const text = entryEl.value.trim();
+    if (!text) return alert("Please write something in your journal.");
+    const emotion = analyzeSentiment(text);
+    const mood = MOOD_SCORE[emotion];
+    const now = new Date();
+    const item = { text, emotion, mood, date: now.toISOString() };
+    entries.push(item);
+    saveEntries(entries);
+    entryEl.value = ""; charCountEl.textContent = "0 characters";
+    renderAI(item); renderJournal(); renderDashboard();
+    alert("Entry submitted!");
+  });
+
+  document.getElementById("startNow").addEventListener("click", () => setRoute("journal"));
+  document.getElementById("startJournalingBtn").addEventListener("click", () => setRoute("journal"));
+
+  function renderJournal() {
+    journalDateEl.textContent = new Date().toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+    renderRecentEntries(); renderCalendar();
+    const last = entries[entries.length - 1];
+    aiAnalysisEl.innerHTML = last ? analysisBlocks(last) : "";
+  }
+  function renderRecentEntries() {
+    recentEntriesEl.innerHTML = "";
+    const recent = [...entries].slice(-3).reverse();
+    recent.forEach((e, idx) => {
+      const tag = sentimentTag(e.emotion);
+      const timeLabel = idx === 0 ? "Today" : idx === 1 ? "Yesterday" : "2 days ago";
+      const preview = e.text.length > 100 ? e.text.slice(0, 100) + "..." : e.text;
+      const div = document.createElement("div"); div.className = "list-item";
+      div.innerHTML = `
+        <div style="display:flex; justify-content:space-between;">
+          <div style="font-weight:700;">${timeLabel}</div>
+          <span class="chip ${tag.class}">${tag.label}</span>
+        </div>
+        <div style="margin-top:8px;">${preview}</div>`;
+      recentEntriesEl.appendChild(div);
+    });
+  }
+  function renderCalendar() {
+    const now = new Date();
+    calendarMonthEl.textContent = now.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+    calendarGridEl.innerHTML = "";
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startWeekday = firstDay.getDay();
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    for (let i = 0; i < startWeekday; i++) calendarGridEl.appendChild(document.createElement("div"));
+    for (let d = 1; d <= daysInMonth; d++) {
+      const cell = document.createElement("div"); cell.className = "day"; cell.textContent = d;
+      const dayStr = new Date(now.getFullYear(), now.getMonth(), d).toDateString();
+      const hasEntry = entries.some(e => new Date(e.date).toDateString() === dayStr);
+      if (hasEntry) { const dot = document.createElement("div"); dot.className = "dot"; cell.appendChild(dot); }
+      calendarGridEl.appendChild(cell);
+    }
+  }
+  function renderAI(entry) { aiAnalysisEl.innerHTML = analysisBlocks(entry); }
+  function analysisBlocks(e) {
+    const suggestions = aiSuggestions(e.emotion);
+    return `
+      <div class="list-item"><strong>Primary emotion:</strong> ${e.emotion}</div>
+      <div class="list-item"><strong>Mood score:</strong> ${e.mood}/5</div>
+      <div class="list-item"><strong>Insight:</strong> Your entry reflects a sense of ${e.emotion}. Keep journaling to track your emotional journey.</div>
+      <div class="list-item"><strong>Suggestions:</strong> ${suggestions.join(" • ")}</div>`;
+  }
+
+  // Dashboard
+  let chart;
+  function renderDashboard() {
+    document.getElementById("statTotal").textContent = entries.length;
+    const avgMood = entries.length ? (entries.reduce((s, e) => s + e.mood, 0) / entries.length) : 0;
+    document.getElementById("statAvgMood").textContent = entries.length ? avgMood.toFixed(1) : "—";
+    const freq = {}; entries.forEach(e => freq[e.emotion] = (freq[e.emotion] || 0) + 1);
+    const topEmotion = Object.keys(freq).length ? Object.entries(freq).sort((a,b) => b[1]-a[1])[0][0] : "—";
+    document.getElementById("statTopEmotion").textContent = topEmotion;
+    const streak = calcStreak(entries); document.getElementById("statStreak").textContent = streak;
+    unlockBadges(entries.length, streak);
+
+    const labels = lastNDates(10).map(d => d.toLocaleDateString(undefined, { month: "short", day: "numeric" }));
+    const moodData = lastNDates(10).map(d => {
+      const dayEntries = entries.filter(e => new Date(e.date).toDateString() === d.toDateString());
+      if (!dayEntries.length) return null;
+      return (dayEntries.reduce((s, e) => s + e.mood, 0) / dayEntries.length);
+    });
+
+    if (chart) chart.destroy();
+    const ctx = document.getElementById("moodChart").getContext("2d");
+    chart = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels,
+        datasets: [{
+          label: "Mood %",
+          data: moodData.map(v => v ? Math.round((v/5)*100) : null),
+          borderColor: "#22c55e",
+          backgroundColor: "rgba(34, 197, 94, 0.2)",
+          tension: 0.3,
+          spanGaps: true
+        }]
+      },
+      options: { plugins: { legend: { display: false } }, scales: { y: { suggestedMin: 0, suggestedMax: 100, ticks: { stepSize: 25 } } } }
+    });
+  }
+
+  // AI chat (calls Python backend)
+  const chatToggle = document.getElementById("chatToggle");
+  const chatPanel = document.getElementById("chatPanel");
+  const closeChat = document.getElementById("closeChat");
+  const chatBody = document.getElementById("chatBody");
+  const chatInput = document.getElementById("chatInput");
+  const sendMsg = document.getElementById("sendMsg");
+
+  chatToggle.addEventListener("click", () => { chatPanel.style.display = chatPanel.style.display === "none" || !chatPanel.style.display ? "flex" : "none"; });
+  closeChat.addEventListener("click", () => { chatPanel.style.display = "none"; });
+  sendMsg.addEventListener("click", handleChatSend);
+  chatInput.addEventListener("keypress", (e) => { if (e.key === "Enter") handleChatSend(); });
+
+  async function handleChatSend() {
+    const text = chatInput.value.trim();
+    if (!text) return;
+    addMsg(text, "user");
+    chatInput.value = "";
+    try {
+        const res = await fetch(`${BACKEND_URL}/api/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text })
+        });
+        const data = await res.json();
+        if (data.error) {
+        addMsg("Error: " + data.error, "ai");
+        } else {
+        addMsg(data.reply || "No reply received.", "ai");
+        }
+    } catch (e) {
+        addMsg("There was an issue reaching the chat service. Please try again.", "ai");
+    }
+  }
+  function addMsg(text, role) {
+    const div = document.createElement("div");
+    div.className = `msg ${role}`; div.textContent = text;
+    chatBody.appendChild(div); chatBody.scrollTop = chatBody.scrollHeight;
+  }
+
+  // Support finder (calls Python backend)
+  const findBtn = document.getElementById("findBtn");
+  const cityEl = document.getElementById("city");
+  const specialtyEl = document.getElementById("specialty");
+  const resultsEl = document.getElementById("results");
+
+  findBtn.addEventListener("click", async () => {
+    const city = (cityEl.value || "").trim();
+    const spec = (specialtyEl.value || "").trim();
+    resultsEl.innerHTML = "";
+    if (!city || !spec) {
+      const warn = document.createElement("div");
+      warn.className = "list-item";
+      warn.innerHTML = "<strong>Tip:</strong> Please enter both your city and a specialty.";
+      resultsEl.appendChild(warn);
+      return;
+    }
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/doctors?city=${encodeURIComponent(city)}&specialty=${encodeURIComponent(spec)}`);
+      const data = await res.json();
+      if (!Array.isArray(data) || !data.length) {
+        const empty = document.createElement("div");
+        empty.className = "list-item";
+        empty.textContent = "No results found. Try a nearby district or 'General Physician'.";
+        resultsEl.appendChild(empty);
+        return;
+      }
+      data.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "list-item";
+        div.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <strong>${item.name}</strong> — ${item.specialty}<br/>
+              <span class="muted">${item.hospital}</span>
+            </div>
+            <a class="btn" href="${item.contactUrl}" target="_blank" rel="noopener">View</a>
+          </div>`;
+        resultsEl.appendChild(div);
+      });
+      const note = document.createElement("div");
+      note.className = "list-item";
+      note.innerHTML = "<strong>Verify:</strong> Check licensing and clinic affiliations. Compare feedback across multiple sources.";
+      resultsEl.appendChild(note);
+    } catch (e) {
+      const err = document.createElement("div");
+      err.className = "list-item";
+      err.textContent = "There was an issue reaching the directory service. Please try again.";
+      resultsEl.appendChild(err);
+    }
+  });
+
+  // Utils
+  function loadEntries() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { return []; } }
+  function saveEntries(data) { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+  function analyzeSentiment(text) {
+    const t = text.toLowerCase();
+    if (t.match(/grateful|thank|appreciate/)) return "Gratitude";
+    if (t.match(/happy|joy|excited/)) return "Joy";
+    if (t.match(/calm|peace|relaxed/)) return "Calm";
+    if (t.match(/anxious|worry|nervous/)) return "Anxiety";
+    if (t.match(/stress|overwhelm|pressured/)) return "Stress";
+    if (t.match(/sad|down|depress/)) return "Sadness";
+    return "Neutral";
+  }
+  function aiSuggestions(emotion) {
+    const map = {
+      Gratitude: ["Write three good things", "Text someone you appreciate", "Capture a smile photo"],
+      Joy: ["Savor the moment", "Share a kind word"],
+      Calm: ["4-7-8 breathing", "Gentle stretch 5 min"],
+      Neutral: ["2-min gratitude list", "10-min calm playlist"],
+      Anxiety: ["Box breathing 4x4", "List 3 controllables"],
+      Stress: ["5-min walk", "25-min focus sprint"],
+      Sadness: ["Reach out to a friend", "Tidy your desk 5 min"]
+    };
+    return map[emotion] || ["Keep journaling to track patterns."];
+  }
+
+  function sentimentTag(e) {
+    if (["Gratitude","Joy","Calm"].includes(e)) return { class: "pos", label: "Positive" };
+    if (["Neutral"].includes(e)) return { class: "neu", label: "Neutral" };
+    return { class: "neg", label: "Needs Support" };
+  }
+  function calcStreak(items) {
+    if (!items.length) return 0;
+    const byDay = new Set(items.map(e => new Date(e.date).toDateString()));
+    let streak = 0;
+    const today = new Date();
+    for (let i = 0; i < 365; i++) {
+      const d = new Date(today); d.setDate(today.getDate() - i);
+      if (byDay.has(d.toDateString())) streak++;
+      else break;
+    }
+    return streak;
+  }
+  function unlockBadges(total, streak) {
+    document.getElementById("badgeFirst").classList.toggle("unlocked", total >= 1);
+    document.getElementById("badge3Day").classList.toggle("unlocked", streak >= 3);
+    document.getElementById("badgeWeek").classList.toggle("unlocked", streak >= 7);
+    document.getElementById("badgeMonth").classList.toggle("unlocked", streak >= 30);
+  }
+  function lastNDates(n) {
+    const out = []; const today = new Date();
+    for (let i = n - 1; i >= 0; i--) { const d = new Date(today); d.setDate(today.getDate() - i); out.push(d); }
+    return out;
+  }
+
+  // Init
+  setRoute((location.hash || "#home").replace("#", ""));
+  renderDashboard();
+</script>
+</body>
+</html>
