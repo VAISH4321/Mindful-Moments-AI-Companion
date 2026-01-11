@@ -47,6 +47,4 @@ We focused on modular architecture: frontend (UI), backend (API + logic), and pr
 - Explore advanced sentiment analysis using datasets and fine-tuned models  
 - Scale to support communities, schools, and workplaces  
 
-\[
-\text{Future Impact} = \text{Accessibility} \times \text{Empathy} \times \text{Scalability}
-\]
+
